@@ -15,9 +15,17 @@ const conn = mysql.createConnection({
 });
 
 //connect to database
-conn.connect((err) =>{
-    if(err) throw err;
-    console.log('Mysql Connected...');
+// conn.connect((err) =>{
+//     if(err) throw err;
+//     console.log('Mysql Connected...');
+// });
+
+conn.connect(function(err) {
+    if (err) {
+        console.error('error connecting: ' + err.stack);
+        return;
+    }
+    console.log('connected as id ' + conn.threadId);
 });
 
 //show all products
@@ -41,11 +49,39 @@ app.get('/api/products/:id',(req, res) => {
 //add new product
 app.post('/api/products',(req, res) => {
         let data = {product_name: req.body.product_name, product_price: req.body.product_price};
-    let sql = "INSERT INTO product SET ?";
-    let query = conn.query(sql, data,(err, results) => {
-        if(err) throw err;
-    res.send(JSON.stringify({"status": 200, "error": null, "response": results}));
+    // let sql = "INSERT INTO product SET ?";
+    // let query = conn.query(sql, data,(err, results) => {
+    //     if(err) throw err;
+    // res.send(JSON.stringify({"status": 200, "error": null, "response": results}));
+    // });
+
+    /* Begin transaction */
+    conn.beginTransaction(function(err) {
+        if (err) { throw err; }
+        var query=conn.query('INSERT INTO product SET ?', data, function(err, results) {
+            if (err) {
+                conn.rollback(function() {
+                    throw err;
+                });
+            }
+
+            var log = results.insertId;
+            res.send(JSON.stringify({"status": 200, "error": null, "response": results}));
+
+        });
+        conn.commit(function(err) {
+            if (err) {
+                connection.rollback(function() {
+                    throw err;
+                });
+            }
+            console.log('Transaction Complete.');
+            conn.end();
+        });
     });
+
+    /* End transaction */
+
 });
 
 //update product
