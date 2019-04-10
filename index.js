@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 const conn = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'sukantahui',
+    password: '',
     database: 'restful_db'
 });
 
