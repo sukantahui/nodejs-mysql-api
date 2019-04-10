@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 const conn = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'sukantahui',
     database: 'restful_db'
 });
 
@@ -57,26 +57,37 @@ app.post('/api/products',(req, res) => {
 
     /* Begin transaction */
     conn.beginTransaction(function(err) {
-        if (err) { throw err; }
+        if (err) {
+            console.log('Part1');
+            res.send(JSON.stringify({"status": 200, "error": err, "response": 'part1'}));
+            console.log('Error begining transaction');
+        }
         var query=conn.query('INSERT INTO product SET ?', data, function(err, results) {
             if (err) {
                 conn.rollback(function() {
-                    throw err;
+                    res.send(JSON.stringify({"status": 200, "error": err, "response": 'error in commit'}));
+                    console.log('Error in query, rolling back');
                 });
+            }else{
+                res.send(JSON.stringify({"status": 200, "error": null, "response": results}));
             }
 
-            var log = results.insertId;
-            res.send(JSON.stringify({"status": 200, "error": null, "response": results}));
+            //var log = results.insertId;
+
 
         });
+        
         conn.commit(function(err) {
             if (err) {
                 connection.rollback(function() {
-                    throw err;
+                    res.send(JSON.stringify({"status": 200, "error": err, "response": 'error in commit'}));
+                    console.log('Error in Commit');
+                    //throw err;
                 });
+            }else {
+                console.log('Transaction Complete.');
             }
-            console.log('Transaction Complete.');
-            conn.end();
+            //conn.end();
         });
     });
 
